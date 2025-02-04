@@ -8,7 +8,7 @@ def rename_function(args):
     try:
         # execvp will replace the current process with media-rename
         # and pass all command line arguments after 'rename' to it
-        cmd_args = ['media-rename', args.path]
+        cmd_args = ['media-rename'] + args.path
         os.execvp('media-rename', cmd_args)
     except FileNotFoundError:
         print("Error: 'media-rename' script not found in PATH")
@@ -71,7 +71,7 @@ def main():
 
     # Create parser for the 'rename' command
     rename_parser = subparsers.add_parser('rename', help='Rename media files based on their metadata')
-    rename_parser.add_argument('path', help='path to the media files')
+    rename_parser.add_argument('path', nargs='+', help='path to the media files')
 
     subparsers.add_parser('install', help='Install media scripts to a location in $PATH')
 
