@@ -73,38 +73,24 @@ def process_as_gopro(filename):
     # values of interest
     vois = extract_exif_fields(filename, fois)
 
-    result = subprocess.run(
-        [
-            'mv',
-            filename,
-            '_'.join(vois) + '.' + extract_extension(filename),
-        ],
-        capture_output=True,
-        text=True
-    )
-
-    if result.returncode != 0:
+    new_filename = '_'.join(vois) + '.' + extract_extension(filename)
+    try:
+        os.rename(filename, new_filename)
+    except OSError as e:
         print(f"Error: could not rename file `{filename}`")
-        print(result.stderr)
+        print(e)
         exit(1)
 
 def process_as_generic(filename):
     fois = ['DateTimeOriginal', 'Model']
     vois = extract_exif_fields(filename, fois)
 
-    result = subprocess.run(
-        [
-            'mv',
-            filename,
-            '_'.join(vois) + '.' + extract_extension(filename),
-        ],
-        capture_output=True,
-        text=True
-    )
-
-    if result.returncode != 0:
+    new_filename = '_'.join(vois) + '.' + extract_extension(filename)
+    try:
+        os.rename(filename, new_filename)
+    except OSError as e:
         print(f"Error: could not rename file `{filename}`")
-        print(result.stderr)
+        print(e)
         exit(1)
 
 if len(sys.argv) < 2:
