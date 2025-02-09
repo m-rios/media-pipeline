@@ -40,7 +40,7 @@ def install():
         current_dir = Path(__file__).parent.resolve()
 
         # List of scripts to install
-        scripts = ['media', 'media-rename', 'media_utils.py']
+        scripts = ['media', 'media-rename', 'media-offset', 'media_utils.py']
 
         # Copy each script and make it executable
         for script in scripts:
