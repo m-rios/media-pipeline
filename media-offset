@@ -52,7 +52,6 @@ def process_as_generic(offset, filename):
     new_date_str = offset_date(offset, filename)
 
     cmd = ['exiftool', f"-DateTimeOriginal=\"{new_date_str}\"", filename]
-    print(cmd)
     result = subprocess.run(
         cmd,
         capture_output=True,
