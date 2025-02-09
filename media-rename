@@ -1,59 +1,29 @@
 #!/usr/bin/env python3
 
+'''
+Rename media files based in their metadata
+filename conventions:
+common for all cameras
+yymmdd_HHMM_SS_make
+for gopro:
+  append _RESOLUTION_FR_FOV_STAB
+'''
+
 import datetime
 import glob
 import json
 import subprocess
 import sys
 import os
-
-# filename conventions:
-# common for all cameras
-# yymmdd_HHMM_SS_make
-# for gopro:
-#   _RESOLUTION_FR_FOV_STAB
-# for other cameras
-
-def find_metadata_fields(metadata, fields):
-    metadata_json = json.loads(metadata)[0]
-    values = []
-    for field in fields:
-        value = str(metadata_json[field]) or ''
-        if field == 'DateTimeOriginal':
-            value = datetime.datetime.strptime(value, "%Y:%m:%d %H:%M:%S").strftime("%y%m%d_%H%M_%S")
-        else:
-            value = value.replace(" ", "")
-        values.append(value)
-    return values
-
-def is_gopro(filename):
-    return os.system(f"exiftool '{file}' | grep -iq gopro") == 0
+import media_utils
 
 def process_file(filename):
     print("renaming " + filename)
-    if is_gopro(filename):
+    if media_utils.is_gopro(filename):
         process_as_gopro(filename)
     else:
         process_as_generic(filename)
 
-def extract_exif_fields(filename, fields):
-    result = subprocess.run(
-        ['exiftool', '-json'] + ['-' + field for field in fields] + [filename],
-        capture_output=True,
-        text=True
-    )
-
-    if result.returncode != 0:
-        print(f"Error: could not get metadata for file `{filename}`")
-        print(result.stderr)
-        exit(1)
-
-    exif_data = result.stdout
-
-    return find_metadata_fields(exif_data, fields)
-
-def extract_extension(filename):
-    return filename.split('.')[-1]
 
 def process_as_gopro(filename):
     result = subprocess.run(
@@ -71,9 +41,9 @@ def process_as_gopro(filename):
     fois = ['DateTimeOriginal','Model', 'ImageWidth', 'VideoFrameRate', 'FieldOfView', 'ElectronicImageStabilization']
 
     # values of interest
-    vois = extract_exif_fields(filename, fois)
+    vois = media_utils.extract_exif_fields(filename, fois)
 
-    new_filename = '_'.join(vois) + '.' + extract_extension(filename)
+    new_filename = '_'.join(vois) + '.' + media_utils.extract_extension(filename)
     try:
         os.rename(filename, new_filename)
     except OSError as e:
@@ -83,9 +53,9 @@ def process_as_gopro(filename):
 
 def process_as_generic(filename):
     fois = ['DateTimeOriginal', 'Model']
-    vois = extract_exif_fields(filename, fois)
+    vois = media_utils.extract_exif_fields(filename, fois)
 
-    new_filename = '_'.join(vois) + '.' + extract_extension(filename)
+    new_filename = '_'.join(vois) + '.' + media_utils.extract_extension(filename)
     try:
         os.rename(filename, new_filename)
     except OSError as e:
@@ -93,22 +63,11 @@ def process_as_generic(filename):
         print(e)
         exit(1)
 
-if len(sys.argv) < 2:
-    print("Error: expected at least 1 argument")
-    sys.exit(1)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Error: expected at least 1 argument")
+        sys.exit(1)
 
-arg = sys.argv[1]
-files = []
-
-if len(sys.argv) > 2:
-    files = sys.argv[1:-1]
-elif os.path.isdir(arg):
-    files = os.listdir(arg)
-elif os.path.isfile(arg):
-    files.append(arg)
-else:
-    print("Error: argument is neither a file or a directory")
-    sys.exit(1)
-
-for file in files:
-    process_file(file)
+    files = media_utils.parse_files(sys.argv)
+    for file in files:
+        process_file(file)

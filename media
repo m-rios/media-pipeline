@@ -3,8 +3,7 @@ import argparse
 import os
 import sys
 
-def rename_function(args):
-    """Function to handle the rename command"""
+def rename(args):
     try:
         # execvp will replace the current process with media-rename
         # and pass all command line arguments after 'rename' to it
@@ -17,11 +16,13 @@ def rename_function(args):
         print(f"Error executing media-rename: {e}")
         sys.exit(1)
 
-def ingest_function():
-    """Function to handle the ingest command"""
-    print("Executing ingest function...")
-    # Add your ingest logic here
-    pass
+def offset(args):
+    try :
+        cmd_args = ['media-offset'] + [args.offset] + args.path
+        os.execvp('media-offset', cmd_args)
+    except FileNotFoundError:
+        print("Error: 'media-offset' script not found in PATH")
+        sys.exit(1)
 
 def install():
     """Install media scripts to ~/.local/bin"""
@@ -39,7 +40,7 @@ def install():
         current_dir = Path(__file__).parent.resolve()
 
         # List of scripts to install
-        scripts = ['media', 'media-rename']
+        scripts = ['media', 'media-rename', 'media_utils.py']
 
         # Copy each script and make it executable
         for script in scripts:
@@ -54,7 +55,8 @@ def install():
             shutil.copy2(source, destination)
 
             # Make executable (add +x permission)
-            destination.chmod(destination.stat().st_mode | 0o755)
+            if not script[-3:] == '.py':
+                destination.chmod(destination.stat().st_mode | 0o755)
 
         print(f"Successfully installed scripts to {install_dir}")
         print("Make sure ~/.local/bin is in your PATH")
@@ -66,8 +68,8 @@ def install():
 
 def main():
     # Create the parser
-    parser = argparse.ArgumentParser(description='Process rename or ingest commands')
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    parser = argparse.ArgumentParser(description='Manage media files')
+    subparsers = parser.add_subparsers(dest='command')
 
     # Create parser for the 'rename' command
     rename_parser = subparsers.add_parser('rename', help='Rename media files based on their metadata')
@@ -75,21 +77,20 @@ def main():
 
     subparsers.add_parser('install', help='Install media scripts to a location in $PATH')
 
+    offset_parser = subparsers.add_parser('offset', help='Change the DateTimeOriginal attribute of a media file by adding / subtracting a time offset')
+    offset_parser.add_argument('offset', help='The amount of time by which to offset the time of the file, expressed in the format %d:%H:%M:%S (days hours minutes and seconds)')
+    offset_parser.add_argument('path', nargs='+', help='path to the media files')
+
     # Parse the arguments
-    try:
-        args = parser.parse_args()
+    args = parser.parse_args()
 
-        # Execute the appropriate function based on the command
-        if args.command == 'rename':
-            rename_function(args)
-        elif args.command == 'ingest':
-            ingest_function()
-        elif args.command == 'install':
-            install()
-
-    except SystemExit:
-        # Handle the case when invalid arguments are provided
-        print("Invalid command. Please use 'rename' or 'ingest'")
+    # Execute the appropriate function based on the command
+    if args.command == 'rename':
+        rename(args)
+    elif args.command == 'install':
+        install()
+    elif args.command == 'offset':
+        offset(args)
 
 if __name__ == "__main__":
     main()
