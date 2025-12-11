@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# iterate over stdin arguments
+IDX=0
+while read filename; do
+    # rename arg file to an autoincrementing counter
+    IDX=$((IDX+1))
+    ext="${filename##*.}"
+    mv ${filename} "$(printf "%02d" $IDX).${ext}"
+done
